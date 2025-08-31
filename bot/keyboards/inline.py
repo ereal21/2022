@@ -139,6 +139,7 @@ def console(role: int) -> InlineKeyboardMarkup:
         return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
     inline_keyboard = [
+        [InlineKeyboardButton('🛒 Pirkimai', callback_data='pirkimai')],
         [InlineKeyboardButton('🏪 Parduotuvės valdymas', callback_data='shop_management')],
         [InlineKeyboardButton('👥 Vartotojų valdymas', callback_data='user_management')],
         [InlineKeyboardButton('📢 Pranešimų siuntimas', callback_data='send_message')],
@@ -177,6 +178,34 @@ def user_management(admin_role: int, user_role: int, admin_manage: int, items: i
                 [InlineKeyboardButton('⬇️ Remove admin', callback_data=f'remove-admin_{user_id}')])
     inline_keyboard.append([InlineKeyboardButton('🔙 Go back', callback_data='user_management')])
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def purchases_dates_list(dates: list[str]) -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup()
+    for d in dates:
+        markup.add(InlineKeyboardButton(d, callback_data=f'purchases_date_{d}'))
+    markup.add(InlineKeyboardButton('🔙 Go back', callback_data='console'))
+    return markup
+
+
+def purchases_list(purchases: list[dict], date: str) -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup()
+    for p in purchases:
+        markup.add(
+            InlineKeyboardButton(
+                f"{p['unique_id']} - {display_name(p['item_name'])}",
+                callback_data=f"purchase_{p['unique_id']}_{date}"
+            )
+        )
+    markup.add(InlineKeyboardButton('🔙 Go back', callback_data='pirkimai'))
+    return markup
+
+
+def purchase_info_menu(purchase_id: int, date: str) -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton('👁 View file', callback_data=f'view_purchase_{purchase_id}'))
+    markup.add(InlineKeyboardButton('🔙 Go back', callback_data=f'purchases_date_{date}'))
+    return markup
 
 
 def user_manage_check(user_id: int) -> InlineKeyboardMarkup:
