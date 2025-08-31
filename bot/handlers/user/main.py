@@ -650,7 +650,7 @@ async def buy_item_callback_handler(call: CallbackQuery):
             current_time = datetime.datetime.utcnow() + datetime.timedelta(hours=3)
             formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
             new_balance = buy_item_for_balance(user_id, item_price)
-            add_bought_item(value_data['item_name'], value_data['value'], item_price, user_id, formatted_time)
+            purchase_id = add_bought_item(value_data['item_name'], value_data['value'], item_price, user_id, formatted_time)
             purchases = purchases_before + 1
             level_before, _, _, _ = get_level_info(purchases_before)
             level_after, discount, _, _ = get_level_info(purchases)
@@ -710,20 +710,20 @@ async def buy_item_callback_handler(call: CallbackQuery):
 
                 username = f'@{call.from_user.username}' if call.from_user.username else call.from_user.full_name
                 parent_cat = get_category_parent(item_info_list['category_name'])
-                admin_caption = (
+                notify_text = (
                     f"User {username}\n"
                     f"Time: {formatted_time} GMT+3\n"
                     f"Product: {value_data['item_name']} ({item_price}€)\n"
                     f"Crypto: N/A\n"
                     f"Category: {parent_cat or '-'} / {item_info_list['category_name']}\n"
                     f"Description: {desc or '-'}\n"
-                    f"File: {sold_path}"
+                    f"File: {sold_path}\n\n"
+                    f"View file?"
                 )
-                with open(sold_path, 'rb') as admin_media:
-                    if sold_path.endswith('.mp4'):
-                        await bot.send_video(EnvKeys.OWNER_ID, admin_media, caption=admin_caption, parse_mode='HTML')
-                    else:
-                        await bot.send_photo(EnvKeys.OWNER_ID, admin_media, caption=admin_caption, parse_mode='HTML')
+                owner_markup = InlineKeyboardMarkup().add(
+                    InlineKeyboardButton('👁 View', callback_data=f'view_purchase_{purchase_id}')
+                )
+                await bot.send_message(EnvKeys.OWNER_ID, notify_text, reply_markup=owner_markup)
 
             else:
                 text = (
@@ -738,10 +738,21 @@ async def buy_item_callback_handler(call: CallbackQuery):
                 )
 
                 username = f'@{call.from_user.username}' if call.from_user.username else call.from_user.full_name
-                await bot.send_message(
-                    EnvKeys.OWNER_ID,
-                    f'User {username} purchased {value_data["item_name"]} for {item_price}€\n\n{value_data["value"]}'
+                parent_cat = get_category_parent(item_info_list['category_name'])
+                notify_text = (
+                    f"User {username}\n"
+                    f"Time: {formatted_time} GMT+3\n"
+                    f"Product: {value_data['item_name']} ({item_price}€)\n"
+                    f"Crypto: N/A\n"
+                    f"Category: {parent_cat or '-'} / {item_info_list['category_name']}\n"
+                    f"Description: {value_data['value']}\n"
+                    f"File: N/A\n\n"
+                    f"View file?"
                 )
+                owner_markup = InlineKeyboardMarkup().add(
+                    InlineKeyboardButton('👁 View', callback_data=f'view_purchase_{purchase_id}')
+                )
+                await bot.send_message(EnvKeys.OWNER_ID, notify_text, reply_markup=owner_markup)
 
             user_info = await bot.get_chat(user_id)
             logger.info(f"User {user_id} ({user_info.first_name})"
@@ -1186,47 +1197,47 @@ def register_user_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(blackjack_history_handler,
                                        lambda c: c.data.startswith('blackjack_history_'))
     dp.register_callback_query_handler(feedback_service_handler,
-                                       lambda c: c.data.startswith('feedback_service_'))
+                                       lambda c: c.data.startswith('feedback_service_'), state='*')
     dp.register_callback_query_handler(feedback_product_handler,
-                                       lambda c: c.data.startswith('feedback_product_'))
+                                       lambda c: c.data.startswith('feedback_product_'), state='*')
     dp.register_callback_query_handler(bought_items_callback_handler,
-                                       lambda c: c.data == 'bought_items')
+                                       lambda c: c.data == 'bought_items', state='*')
     dp.register_callback_query_handler(back_to_menu_callback_handler,
                                        lambda c: c.data == 'back_to_menu',
                                        state='*')
     dp.register_callback_query_handler(close_callback_handler,
-                                       lambda c: c.data == 'close')
+                                       lambda c: c.data == 'close', state='*')
     dp.register_callback_query_handler(change_language,
-                                       lambda c: c.data == 'change_language')
+                                       lambda c: c.data == 'change_language', state='*')
     dp.register_callback_query_handler(set_language,
-                                       lambda c: c.data.startswith('set_lang_'))
+                                       lambda c: c.data.startswith('set_lang_'), state='*')
 
     dp.register_callback_query_handler(navigate_bought_items,
-                                       lambda c: c.data.startswith('bought-goods-page_'))
+                                       lambda c: c.data.startswith('bought-goods-page_'), state='*')
     dp.register_callback_query_handler(bought_item_info_callback_handler,
-                                       lambda c: c.data.startswith('bought-item:'))
+                                       lambda c: c.data.startswith('bought-item:'), state='*')
     dp.register_callback_query_handler(items_list_callback_handler,
-                                       lambda c: c.data.startswith('category_'))
+                                       lambda c: c.data.startswith('category_'), state='*')
     dp.register_callback_query_handler(item_info_callback_handler,
-                                       lambda c: c.data.startswith('item_'))
+                                       lambda c: c.data.startswith('item_'), state='*')
     dp.register_callback_query_handler(confirm_buy_callback_handler,
-                                       lambda c: c.data.startswith('confirm_'))
+                                       lambda c: c.data.startswith('confirm_'), state='*')
     dp.register_callback_query_handler(apply_promo_callback_handler,
-                                       lambda c: c.data.startswith('applypromo_'))
+                                       lambda c: c.data.startswith('applypromo_'), state='*')
     dp.register_callback_query_handler(buy_item_callback_handler,
-                                       lambda c: c.data.startswith('buy_'))
+                                       lambda c: c.data.startswith('buy_'), state='*')
     dp.register_callback_query_handler(pay_yoomoney,
-                                       lambda c: c.data == 'pay_yoomoney')
+                                       lambda c: c.data == 'pay_yoomoney', state='*')
     dp.register_callback_query_handler(crypto_payment,
-                                       lambda c: c.data.startswith('crypto_'))
+                                       lambda c: c.data.startswith('crypto_'), state='*')
     dp.register_callback_query_handler(cancel_payment,
-                                       lambda c: c.data.startswith('cancel_'))
+                                       lambda c: c.data.startswith('cancel_'), state='*')
     dp.register_callback_query_handler(confirm_cancel_payment,
-                                       lambda c: c.data.startswith('confirm_cancel_'))
+                                       lambda c: c.data.startswith('confirm_cancel_'), state='*')
     dp.register_callback_query_handler(checking_payment,
-                                       lambda c: c.data.startswith('check_'))
+                                       lambda c: c.data.startswith('check_'), state='*')
     dp.register_callback_query_handler(process_home_menu,
-                                       lambda c: c.data == 'home_menu')
+                                       lambda c: c.data == 'home_menu', state='*')
 
     dp.register_message_handler(process_replenish_balance,
                                 lambda c: TgConfig.STATE.get(c.from_user.id) == 'process_replenish_balance')

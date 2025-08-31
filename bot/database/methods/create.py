@@ -68,12 +68,14 @@ def start_operation(user_id: int, value: int, operation_id: str, message_id: int
 
 
 def add_bought_item(item_name: str, value: str, price: int, buyer_id: int,
-                    bought_time: str) -> None:
+                    bought_time: str) -> int:
     session = Database().session
+    unique_id = random.randint(1000000000, 9999999999)
     session.add(
         BoughtGoods(name=item_name, value=value, price=price, buyer_id=buyer_id, bought_datetime=bought_time,
-                    unique_id=str(random.randint(1000000000, 9999999999))))
+                    unique_id=str(unique_id)))
     session.commit()
+    return unique_id
 
 
 def create_promocode(code: str, discount: int, expires_at: str | None) -> None:

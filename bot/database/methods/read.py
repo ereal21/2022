@@ -207,6 +207,19 @@ def bought_items_list(buyer_id: int) -> list[str]:
         Database().session.query(BoughtGoods.item_name).filter(BoughtGoods.buyer_id == buyer_id).all()]
 
 
+def get_purchase_dates() -> list[str]:
+    return [d[0] for d in Database().session.query(func.date(BoughtGoods.bought_datetime)).distinct().all()]
+
+
+def get_purchases_by_date(date: str) -> list[dict]:
+    rows = (
+        Database().session.query(BoughtGoods)
+        .filter(func.date(BoughtGoods.bought_datetime) == date)
+        .all()
+    )
+    return [r.__dict__ for r in rows]
+
+
 def select_all_users() -> int:
     return Database().session.query(func.count()).filter(User).scalar()
 
